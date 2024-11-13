@@ -105,32 +105,34 @@ echo ""
 
 if [ "$tool" = "sysupgrade" ]; then
     case "$ver" in
-		 "pdu6r")
-			  case "$firmware" in
-				  1.*)	
-					  echo "PDU6R Upgrade"
-					  echo "Downloading $pd_fw_url"
-					  $sysupgrding_3
-					  ls -lash /tmp/firmware.bin
-					  sysupgrade -n /tmp/firmware.bin
-					  ;;	
-				   *)
-            echo "Unsupported firmware version for PDU6R"
-            ;;
-            esac
+     "pdu6r")
+	case "$firmware" in
+	     1.*)	
+            	echo "PDU6R Upgrade"
+		echo "Downloading $pd_fw_url"
+		$sysupgrding_3
+		ls -lash /tmp/firmware.bin
+		sysupgrade -n /tmp/firmware.bin
+		;;	
+              *)
+                echo "Unsupported firmware version for PDU6R"
+                ;;
+         esac
+	 ;;
       "pdu14r")
-			   case "$firmware" in
-			     1.*)	
-					    echo "PDU14R Upgrade"
-					    echo "Downloading $pd_fw_url"
-					    $sysupgrding_3
-					    ls -lash /tmp/firmware.bin
-					    sysupgrade -n /tmp/firmware.bin
-					    ;;	
-				    *)
-              echo "Unsupported firmware version for PDU14R"
-              ;;
-            esac
+	 case "$firmware" in
+	      1.*)	
+                echo "PDU14R Upgrade"
+                echo "Downloading $pd_fw_url"
+                $sysupgrding_3
+                ls -lash /tmp/firmware.bin
+                sysupgrade -n /tmp/firmware.bin
+                ;;	
+               *)
+                echo "Unsupported firmware version for PDU14R"
+                ;;
+         esac
+	 ;;
        "A42")
            case "$firmware" in
                7.*)
