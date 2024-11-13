@@ -83,7 +83,7 @@ ng6_rf_51="openwrt-ipq40xx-$ref_model2-squashfs-factory.bin.signed"
 sysupgrding_0="curl -o /tmp/firmware.bin $fw_url"
 sysupgrding_1="curl -o /tmp/firmware.bin $b_fw_url"
 sysupgrding_2="curl -o /tmp/firmware.bin $ng6_fw_url"
-sysupgrding_3="curl -k -o /tmp/firmware.bin $pdu_fw_url"
+sysupgrding_3="curl -k -o /tmp/firmware.bin $pd_fw_url"
 
 flashing_0="ap51-flash $over $rf_51"
 flashing_1="ap51-flash $over $b_rf_51"
