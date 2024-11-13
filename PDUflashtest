@@ -64,7 +64,7 @@ lower_ver="$(echo "$ver" | awk '{print tolower($0)}')"
 lower_ver1="$(echo "$lower_ver" |  tr -d 'Pp')"
 ref_model1="$(echo "$ref_model" | tr -d 'Pp')"
 ref_model2="$(echo "$ref_model1" | awk '{print toupper($0)}')"
-ref_model3="DMP-$(echo "$ref_model0" | awk '{print toupper($0)}')"
+ref_model3="DMP-$(echo "$ref_model" | awk '{print toupper($0)}')"
 
 # Set URLs based on the model of the AP and current firmware (NG6/NG7)
 
