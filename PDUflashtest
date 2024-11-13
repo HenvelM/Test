@@ -64,6 +64,7 @@ lower_ver="$(echo "$ver" | awk '{print tolower($0)}')"
 lower_ver1="$(echo "$lower_ver" |  tr -d 'Pp')"
 ref_model1="$(echo "$ref_model" | tr -d 'Pp')"
 ref_model2="$(echo "$ref_model1" | awk '{print toupper($0)}')"
+ref_model3="DMP-$(echo "$ref_model1" | awk '{print toupper($0)}')"
 
 # Set URLs based on the model of the AP and current firmware (NG6/NG7)
 
@@ -73,7 +74,7 @@ ng6_fw_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq4
 rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq807x-datto_$ref_model-squashfs-factory.bin.signed"
 b_rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-generic-openmesh_$ref_model1-squashfs-factory.bin.signed"
 ng6_rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-$ref_model2-squashfs-factory.bin.signed"
-pd_fw_url="https://files.cloudtrax.com/downloads/firmware/mpv2/$lower_ver1/$ref_model2.bin"
+pd_fw_url="https://files.cloudtrax.com/downloads/firmware/mpv2/$going_to/$ref_model3-12-515.bin"
 
 rf_51="openwrt-ipq807x-datto_$ref_model-squashfs-factory.bin.signed"
 b_rf_51="openwrt-ipq40xx-generic-openmesh_$ref_model1-squashfs-factory.bin.signed"
@@ -441,5 +442,5 @@ if [ "$tool" = "reflash" ]; then
             ;;
     esac
 else
-    echo "Did not select to reflash"
+    echo ""
 fi
