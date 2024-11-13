@@ -1,0 +1,443 @@
+#!/bin/sh
+
+# Gathers user input....
+# First choice is to either sysupgrade or reflash
+# Second choice is the version you want to apply
+# Third choice is the model of the AP (only applies to reflash mode)
+# Fourth choice is the interface going out from (only applies to reflash mode)
+
+tool_0="$1"
+going_to="$2"
+ref_model_0="$3"
+over_0="$4"
+
+tool="$(echo "$tool_0" | awk '{print tolower($0)}')"
+ref_model="$(echo "$ref_model_0" | awk '{print tolower($0)}')"
+over="$(echo "$over_0" | awk '{print tolower($0)}')"
+
+# Gathers APs' information like AP model (AP42/AP62/AP440/AP840/AP840e) and AP version (NG7 or NG6)
+
+"
+ ▄▄▄·  ▄▄▄·    ▄▄▄  ▄▄▄ .·▄▄▄▄▄▌   ▄▄▄· .▄▄ ·  ▄ .▄▪   ▐ ▄  ▄▄▄·▄▄▄▄▄      ▄▄▄  
+▐█ ▀█ ▐█ ▄█    ▀▄ █·▀▄.▀·▐▄▄·██•  ▐█ ▀█ ▐█ ▀. ██▪▐███ •█▌▐█▐█ ▀█•██  ▪     ▀▄ █·
+▄█▀▀█  ██▀·    ▐▀▀▄ ▐▀▀▪▄██▪ ██▪  ▄█▀▀█ ▄▀▀▀█▄██▀▐█▐█·▐█▐▐▌▄█▀▀█ ▐█.▪ ▄█▀▄ ▐▀▀▄ 
+▐█ ▪▐▌▐█▪·•    ▐█•█▌▐█▄▄▌██▌.▐█▌▐▌▐█ ▪▐▌▐█▄▪▐███▌▐▀▐█▌██▐█▌▐█ ▪▐▌▐█▌·▐█▌.▐▌▐█•█▌
+ ▀  ▀ .▀       .▀  ▀ ▀▀▀ ▀▀▀ .▀▀▀  ▀  ▀  ▀▀▀▀ ▀▀▀ ·▀▀▀▀▀ █▪ ▀  ▀ ▀▀▀  ▀█▄▀▪.▀  ▀
+By: Henvel Mateo"
+
+echo " "
+
+AP="AP840E AP840 AP440 A62 A42 DNA"
+Firmwares="7.* 6.* 1.*" 
+ver=""
+NG=""
+
+for model in $AP; do
+    if grep -oq "$model" /etc/board.json; then
+        ver="$model"
+        break
+    elif grep -oq "DNA" /etc/device_info; then
+        ver="DNA"
+        break
+    fi
+done
+
+if [ "$ref_model" = "pdu6r" ]; then
+    ver="pdu6r"
+elif [ "$ref_model" = "pdu14r" ]; then
+    ver="pdu14r"
+fi
+
+for firmware in $Firmwares; do
+    if [ "$ver" != "DNA" ]; then
+       if grep -q "$firmware" /etc/fw_core_version; then
+           NG="$firmware"
+           break
+       elif grep -q "$firmware" /etc/fw_ng_version; then
+           NG="$firmware"
+           break
+       fi
+    fi
+done
+
+lower_ver="$(echo "$ver" | awk '{print tolower($0)}')"
+lower_ver1="$(echo "$lower_ver" |  tr -d 'Pp')"
+ref_model1="$(echo "$ref_model" | tr -d 'Pp')"
+ref_model2="$(echo "$ref_model1" | awk '{print toupper($0)}')"
+
+# Set URLs based on the model of the AP and current firmware (NG6/NG7)
+
+fw_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq807x-datto_$lower_ver-squashfs-sysupgrade.bin"
+b_fw_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-generic-openmesh_$lower_ver1-squashfs-sysupgrade.bin"
+ng6_fw_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-$lower_ver1-squashfs-factory.bin"
+rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq807x-datto_$ref_model-squashfs-factory.bin.signed"
+b_rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-generic-openmesh_$ref_model1-squashfs-factory.bin.signed"
+ng6_rf_url="http://files.cloudtrax.com/downloads/firmware/$going_to/openwrt-ipq40xx-$ref_model2-squashfs-factory.bin.signed"
+pd_fw_url="https://files.cloudtrax.com/downloads/firmware/mpv2/$lower_ver1/$ref_model2.bin"
+
+rf_51="openwrt-ipq807x-datto_$ref_model-squashfs-factory.bin.signed"
+b_rf_51="openwrt-ipq40xx-generic-openmesh_$ref_model1-squashfs-factory.bin.signed"
+ng6_rf_51="openwrt-ipq40xx-$ref_model2-squashfs-factory.bin.signed"
+
+sysupgrding_0="curl -o /tmp/firmware.bin $fw_url"
+sysupgrding_1="curl -o /tmp/firmware.bin $b_fw_url"
+sysupgrding_2="curl -o /tmp/firmware.bin $ng6_fw_url"
+sysupgrding_3="curl -o /tmp/firmware.bin $pdu_fw_url"
+
+flashing_0="ap51-flash $over $rf_51"
+flashing_1="ap51-flash $over $b_rf_51"
+flashing_2="ap51-flash $over $ng6_rf_url"
+
+# Relay the inputted information 
+
+echo "AP Model: $ver"
+echo "Mode: $tool"
+echo "Currently: $ver"
+echo "Applying: $going_to"
+echo "Reflashing a: $ref_model"
+echo "Going over: $over"
+echo ""
+
+# Runs the standard commands based on the model and version of the current AP.
+# If doing a sysupgrade ensures that NG6 cannot go to NG7
+
+#Sysupgrade path
+
+if [ "$tool" = "sysupgrade" ]; then
+    case "$ver" in
+		 "pdu6r")
+			  case "$firmware" in
+				  1.*)	
+					  echo "PDU6R Upgrade"
+					  echo "Downloading $pd_fw_url"
+					  $sysupgrding_3
+					  ls -lash /tmp/firmware.bin
+					  sysupgrade -n /tmp/firmware.bin
+					  ;;	
+				   *)
+            echo "Unsupported firmware version for PDU6R"
+            ;;
+            esac
+      "pdu14r")
+			   case "$firmware" in
+			     1.*)	
+					    echo "PDU14R Upgrade"
+					    echo "Downloading $pd_fw_url"
+					    $sysupgrding_3
+					    ls -lash /tmp/firmware.bin
+					    sysupgrade -n /tmp/firmware.bin
+					    ;;	
+				    *)
+              echo "Unsupported firmware version for PDU14R"
+              ;;
+            esac
+       "A42")
+           case "$firmware" in
+               7.*)
+                   echo "AP42 with NG7"
+                   echo "Downloading $b_fw_url"
+                   $sysupgrding_1
+                   ls -lash /tmp/firmware.bin
+                   sysupgrade -n /tmp/firmware.bin
+                   ;;
+               6.*)
+                   case "$going_to" in
+                       6.*)
+                           echo "Executing sysupgrade for NG6 on AP42"
+                           echo "Downloading: $ng6_fw_url"
+                           $sysupgrding_2
+                           ls -lash /tmp/firmware.bin
+                           sysupgrade -n /tmp/firmware.bin
+                           ;;
+                       *)
+                           echo "DO NOT sysupgrade 6.X.XX APs to any 7.X.XX or higher version."
+                           echo "Doing so will not work correctly and may break the AP."
+                           echo "Either use the flash tool or upgrade through Network Manager."
+                           ;;
+                     esac
+                     ;;
+               *)
+                   echo "Unsupported firmware version for AP42"
+                   ;;
+           esac
+           ;;
+       "A62")
+              case "$firmware" in
+               7.*)
+                   echo "AP62 with NG7"
+                   echo "Downloading $b_fw_url"
+                   $sysupgrding_1
+                   ls -lash /tmp/firmware.bin
+                   sysupgrade -n /tmp/firmware.bin
+                   ;;
+               6.*)
+                   case "$going_to" in
+                       6.*)
+                           echo "Executing sysupgrade for NG6 on AP62"
+                           echo "Downloading: $ng6_fw_url"
+                           $sysupgrding_2
+                           ls -lash /tmp/firmware.bin
+                           sysupgrade -n /tmp/firmware.bin
+                           ;;
+                       *)
+                           echo "DO NOT sysupgrade 6.X.XX APs to any 7.X.XX or higher version."
+                           echo "Doing so will not work correctly and may break the AP."
+                           echo "Either use the flash tool or upgrade through Network Manager."
+                           ;;
+                     esac
+                     ;;
+               *)
+                   echo "Unsupported firmware version for AP62"
+                   ;;
+           esac
+           ;;
+       "AP440")
+           case "$firmware" in
+               7.*)
+                   echo "AP440 with NG7"
+                   echo "Downloading $fw_url"
+                   $sysupgrding_0
+                   ls -lash /tmp/firmware.bin
+                   sysupgrade -n /tmp/firmware.bin
+                   ;;
+               *)
+                   echo "Unsupported version for AP440 contact el James"
+                   ;;
+           esac
+           ;;
+       "AP840")
+           case "$firmware" in
+               7.*)
+                   echo "AP840 with NG7"
+                   echo "Downloading $fw_url"
+                   $sysupgrding_0
+                   ls -lash /tmp/firmware.bin
+                   sysupgrade -n /tmp/firmware.bin
+                   ;;
+               *)
+                   echo "Unsupported version for AP840 contact el James"
+                   ;;
+           esac
+           ;;
+       "AP840E")
+           case "$firmware" in
+               7.*)
+                   echo "AP840e with NG7"
+                   echo "Downloading $fw_url"
+                   $sysupgrding_0
+                   ls -lash /tmp/firmware.bin
+                   sysupgrade -n /tmp/firmware.bin
+                   ;;
+               *)
+                   echo "Unsupported version for AP840e contact el James"
+                   ;;
+           esac
+           ;;
+       "DNA")
+           echo "Sysupgrade not available for DNA"
+            ;;
+        *)
+            echo "No supported device for a sysupgrade found"
+            ;;
+    esac
+else
+    echo "Did not select to sysupgrade"
+fi
+
+#Reflash Path
+
+if [ "$tool" = "reflash" ]; then
+    case "$ver" in
+       "A42")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "AP42 executing reflash for AP62/42"
+                opkg install http://files.cloudtrax.com/downloads/firmware/7.0.13/ap51-flash_2022.0+_arm_cortex-a7_neon-vfpv4.ipk
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for AP42 reflash tool"
+                    ;;
+                 esac
+            else
+                echo "AP42 executing reflash for AP840/440"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+       "A62")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "AP62 executing reflash for AP62/42"
+                opkg install http://files.cloudtrax.com/downloads/firmware/7.0.13/ap51-flash_2022.0+_arm_cortex-a7_neon-vfpv4.ipk
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for AP62 reflash tool"
+                    ;;
+                 esac
+            else
+                echo "AP62 executing reflash for AP840/440"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+       "AP440")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "AP440 executing reflash for AP62/42"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for AP440 reflash tool"
+                    ;;
+                 esac
+            else
+                echo "AP440 executing reflash for AP840/440"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+       "AP840")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "AP840 executing reflash for AP62/42"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for AP840 reflash tool"
+                    ;;
+                 esac
+            else
+                echo "AP840 executing reflash for AP840/440"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+       "AP840E")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "AP840e executing reflash for AP62/42"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for AP840e reflash tool"
+                    ;;
+                 esac
+            else
+                echo "AP840e executing reflash for AP840/440"
+                opkg install http://downloads.openwrt.org/releases/23.05.3/packages/aarch64_cortex-a53/packages/ap51-flash_2022.0-2_aarch64_cortex-a53.ipk
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+        "DNA")
+            if [ "$ref_model" = "ap62" ] || [ "$ref_model" = "ap42" ]; then
+                echo "DNA executing reflash for AP62/42"
+                mountrw ; opkg install http://downloads.openwrt.org/releases/23.05.3/packages/x86_64/packages/ap51-flash_2022.0-2_x86_64.ipk ; mountro
+                cd /tmp
+                case "$going_to" in
+                6.*)
+                    echo "Executing reflash for NG6"
+                    echo "Downloading: $ng6_rf_url"
+                    curl -O "$ng6_rf_url"
+                    $flashing_2
+                    ;;
+                7.*)
+                    echo "Executing reflash for NG7"
+                    echo "Downloading: $b_rf_url"
+                    curl -O "$b_rf_url"
+                    $flashing_1
+                    ;;
+                *)
+                    echo "Unsupported version for DNA reflash tool"
+                    ;;
+                 esac
+            else
+                echo "DNA executing reflash for AP840/440"
+                mountrw ; opkg install http://downloads.openwrt.org/releases/23.05.3/packages/x86_64/packages/ap51-flash_2022.0-2_x86_64.ipk ; mountro
+                cd /tmp
+                echo "Downloading: $rf_url"
+                curl -O "$rf_url"
+                $flashing_0
+            fi
+           ;;
+        *)
+            echo "No matching device found"
+            ;;
+    esac
+else
+    echo "Did not select to reflash"
+fi
