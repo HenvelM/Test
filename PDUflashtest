@@ -126,6 +126,7 @@ if [ "$tool" = "sysupgrade" ]; then
 	      1.*)	
                 echo "PDU14R Upgrade"
                 echo "Downloading $pd_fw_url"
+		echo "$sysupgrding_3"
                 $sysupgrding_3
                 ls -lash /tmp/firmware.bin
                 sysupgrade -n /tmp/firmware.bin
