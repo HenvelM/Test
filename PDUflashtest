@@ -114,7 +114,7 @@ if [ "$tool" = "sysupgrade" ]; then
 		echo "$sysupgrding_3"
 		$sysupgrding_3
 		ls -lash /tmp/firmware.bin
-		sysupgrade -n /tmp/firmware.bin
+		sysupgrade /tmp/firmware.bin
 		;;	
               *)
                 echo "Unsupported firmware version for PDU6R"
@@ -129,7 +129,7 @@ if [ "$tool" = "sysupgrade" ]; then
 		echo "$sysupgrding_3"
                 $sysupgrding_3
                 ls -lash /tmp/firmware.bin
-                sysupgrade -n /tmp/firmware.bin
+                sysupgrade /tmp/firmware.bin
                 ;;	
                *)
                 echo "Unsupported firmware version for PDU14R"
